@@ -437,6 +437,7 @@ export class LGraphCanvas {
   render_canvas_border: boolean
   render_connections_shadows: boolean
   render_connections_border: boolean
+  hide_connections_stroke: boolean
   render_curved_connections: boolean
   render_connection_arrows: boolean
   render_collapsed_slots: boolean
@@ -733,6 +734,7 @@ export class LGraphCanvas {
     // too much cpu
     this.render_connections_shadows = false
     this.render_connections_border = true
+    this.hide_connections_stroke = false
     this.render_curved_connections = false
     this.render_connection_arrows = false
     this.render_collapsed_slots = true
@@ -5133,7 +5135,7 @@ export class LGraphCanvas {
     }
 
     // rendering the outline of the connection can be a little bit slow
-    if (this.render_connections_border && !this.low_quality && !skip_border) {
+    if (this.render_connections_border && !this.low_quality && !skip_border && !this.hide_connections_stroke) {
       ctx.strokeStyle = "rgba(0,0,0,0.5)"
       ctx.stroke(path)
     }
