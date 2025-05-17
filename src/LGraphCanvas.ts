@@ -5779,6 +5779,7 @@ export class LGraphCanvas {
   prompt(
     title: string,
     value: any,
+    stepValue: number,
     callback: (arg0: any) => void,
     event: CanvasMouseEvent,
     multiline?: boolean,
@@ -5791,7 +5792,8 @@ export class LGraphCanvas {
       className: "graphdialog rounded",
       innerHTML: multiline
         ? "<span class='name'></span> <textarea autofocus class='value'></textarea><button class='rounded'>OK</button>"
-        : "<span class='name'></span> <input autofocus type='text' class='value'/><button class='rounded'>OK</button>",
+        : stepValue ? `<span class='name'></span> <input autofocus type='number' step=${stepValue} class='value'/><button class='rounded'>OK</button>`
+                    : "<span class='name'></span> <input autofocus type='text' class='value'/><button class='rounded'>OK</button>",
       close() {
         that.prompt_box = null
         if (dialog.parentNode) {
@@ -6446,18 +6448,22 @@ export class LGraphCanvas {
     options = options || {}
 
     const info = node.getPropertyInfo(property)
+    console.log("property info", info)
     const { type } = info
 
     let input_html = ""
 
     if (
       type == "string" ||
-      type == "number" ||
       type == "array" ||
       type == "object"
     ) {
       input_html = "<input autofocus type='text' class='value'/>"
-    } else if ((type == "enum" || type == "combo") && info.values) {
+    }
+      else if (type == "number") {
+      input_html = "<input autofocus type='number' class='value'/>"
+    }
+      else if ((type == "enum" || type == "combo") && info.values) {
       input_html = "<select autofocus type='text' class='value'>"
       for (const i in info.values) {
         const v = Array.isArray(info.values) ? info.values[i] : i

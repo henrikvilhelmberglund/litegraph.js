@@ -48,6 +48,7 @@ export class NumberWidget extends BaseSteppedWidget<INumericWidget> implements I
   override onClick({ e, node, canvas }: WidgetEventOptions) {
     const x = e.canvasX - node.pos[0]
     const width = this.width || node.size[0]
+    const step = getWidgetStep(this.options)
 
     // Determine if clicked on left/right arrows
     const delta = x < 40
@@ -63,7 +64,7 @@ export class NumberWidget extends BaseSteppedWidget<INumericWidget> implements I
     }
 
     // Handle center click - show prompt
-    canvas.prompt("Value", this.value, (v: string) => {
+    canvas.prompt("Value", this.value, step, (v: string) => {
       // Check if v is a valid equation or a number
       if (/^[\d\s()*+/-]+|\d+\.\d+$/.test(v)) {
         // Solve the equation if possible
