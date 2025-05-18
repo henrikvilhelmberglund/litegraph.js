@@ -5871,7 +5871,6 @@ export class LGraphCanvas {
 
     const input = value_element
     input.addEventListener("keydown", function (e: KeyboardEvent) {
-      console.log(e);
       dialog.is_modified = true
       if (e.key == "Escape") {
         // ESC
