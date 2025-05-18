@@ -5779,10 +5779,10 @@ export class LGraphCanvas {
   prompt(
     title: string,
     value: any,
-    stepValue: number,
     callback: (arg0: any) => void,
     event: CanvasMouseEvent,
     multiline?: boolean,
+    stepValue?: number,
   ): HTMLDivElement {
     const that = this
     title = title || ""

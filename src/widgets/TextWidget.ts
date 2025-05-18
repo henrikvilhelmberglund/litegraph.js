@@ -37,7 +37,6 @@ export class TextWidget extends BaseWidget<IStringWidget> implements IStringWidg
     canvas.prompt(
       "Value",
       this.value,
-      0,
       (v: string) => {
         if (v !== null) {
           this.setValue(v, { e, node, canvas })
@@ -45,6 +44,7 @@ export class TextWidget extends BaseWidget<IStringWidget> implements IStringWidg
       },
       e,
       this.options?.multiline ?? false,
+      0,
     )
   }
 }

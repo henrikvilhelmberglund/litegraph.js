@@ -64,7 +64,7 @@ export class NumberWidget extends BaseSteppedWidget<INumericWidget> implements I
     }
 
     // Handle center click - show prompt
-    canvas.prompt("Value", this.value, step, (v: string) => {
+    canvas.prompt("Value", this.value, (v: string) => {
       // Check if v is a valid equation or a number
       if (/^[\d\s()*+/-]+|\d+\.\d+$/.test(v)) {
         // Solve the equation if possible
@@ -76,7 +76,7 @@ export class NumberWidget extends BaseSteppedWidget<INumericWidget> implements I
       if (!isNaN(newValue)) {
         this.setValue(newValue, { e, node, canvas })
       }
-    }, e)
+    }, e, false, step)
   }
 
   /**
