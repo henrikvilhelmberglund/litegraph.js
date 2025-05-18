@@ -5875,8 +5875,17 @@ export class LGraphCanvas {
       if (e.key == "Escape") {
         // ESC
         dialog.close()
-      } else if (
-        e.key == "Enter" &&
+      } 
+      else if (
+        e.ctrlKey && e.key == "Enter" &&
+        (e.target as Element).localName != "textarea"
+      ) {
+        if (callback) {
+          callback(this.value)
+        }
+      }
+      else if (
+        !e.ctrlKey && e.key == "Enter" &&
         (e.target as Element).localName != "textarea"
       ) {
         if (callback) {
