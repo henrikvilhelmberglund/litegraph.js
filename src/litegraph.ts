@@ -10,16 +10,12 @@ import type { CanvasEventDetail } from "./types/events"
 import type { RenderShape, TitleMode } from "./types/globalEnums"
 
 // Must remain above LiteGraphGlobal (circular dependency due to abstract factory behaviour in `configure`)
-export type { Subgraph } from "./subgraph/Subgraph"
+export { Subgraph } from "./subgraph/Subgraph"
 
 import { LiteGraphGlobal } from "./LiteGraphGlobal"
 import { loadPolyfills } from "./polyfills"
 
 export const LiteGraph = new LiteGraphGlobal()
-
-export function clamp(v: number, a: number, b: number): number {
-  return a > v ? a : (b < v ? b : v)
-}
 
 // Load legacy polyfills
 loadPolyfills()
@@ -29,7 +25,9 @@ loadPolyfills()
 // Type definitions for litegraph.js 0.7.0
 // Project: litegraph.js
 // Definitions by: NateScarlet <https://github.com/NateScarlet>
+/** @deprecated Use {@link Point} instead. */
 export type Vector2 = Point
+/** @deprecated Use {@link Rect} instead. */
 export type Vector4 = [number, number, number, number]
 
 export interface IContextMenuItem {
@@ -84,7 +82,6 @@ export interface LGraphNodeConstructor<T extends LGraphNode = LGraphNode> {
   title_color?: string
   title_text_color?: string
   keepAllLinksOnBypass: boolean
-  nodeData: any
 }
 
 // End backwards compat
@@ -97,6 +94,7 @@ export { CurveEditor } from "./CurveEditor"
 export { DragAndScale } from "./DragAndScale"
 export { LabelPosition, SlotDirection, SlotShape, SlotType } from "./draw"
 export { strokeShape } from "./draw"
+export { Rectangle } from "./infrastructure/Rectangle"
 export type {
   CanvasColour,
   ColorOption,
@@ -124,7 +122,6 @@ export type {
   ReadOnlyPoint,
   ReadOnlyRect,
   Rect,
-  Rect32,
   Size,
 } from "./interfaces"
 export { LGraph } from "./LGraph"
@@ -133,7 +130,7 @@ export { LGraphCanvas, type LGraphCanvasState } from "./LGraphCanvas"
 export { LGraphGroup } from "./LGraphGroup"
 export { LGraphNode, type NodeId } from "./LGraphNode"
 export { type LinkId, LLink } from "./LLink"
-export { createBounds } from "./measure"
+export { clamp, createBounds } from "./measure"
 export { Reroute, type RerouteId } from "./Reroute"
 export type { CanvasPointerEvent } from "./types/events"
 export {

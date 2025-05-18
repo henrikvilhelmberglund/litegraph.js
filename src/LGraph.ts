@@ -1,3 +1,4 @@
+import type { DragAndScaleState } from "./DragAndScale"
 import type {
   Dictionary,
   IContextMenuValue,
@@ -24,7 +25,7 @@ import { LGraphNode, type NodeId } from "./LGraphNode"
 import { LiteGraph } from "./litegraph"
 import { type LinkId, LLink } from "./LLink"
 import { MapProxyHandler } from "./MapProxyHandler"
-import { Reroute, RerouteId } from "./Reroute"
+import { Reroute, type RerouteId } from "./Reroute"
 import { stringOrEmpty } from "./strings"
 import { LGraphEventMode } from "./types/globalEnums"
 import { getAllNestedItems } from "./utils/collections"
@@ -51,6 +52,7 @@ export interface LGraphConfig {
 export interface LGraphExtra extends Dictionary<unknown> {
   reroutes?: SerialisableReroute[]
   linkExtensions?: { id: number, parentId: number | undefined }[]
+  ds?: DragAndScaleState
 }
 
 export interface BaseLGraph {
@@ -825,6 +827,8 @@ export class LGraph implements LinkNetwork, BaseLGraph, Serialisable<Serialisabl
   remove(node: LGraphNode | LGraphGroup): void {
     // LEGACY: This was changed from constructor === LiteGraph.LGraphGroup
     if (node instanceof LGraphGroup) {
+      this.canvasAction(c => c.deselect(node))
+
       const index = this._groups.indexOf(node)
       if (index != -1) {
         this._groups.splice(index, 1)
@@ -837,9 +841,15 @@ export class LGraph implements LinkNetwork, BaseLGraph, Serialisable<Serialisabl
     }
 
     // not found
-    if (this._nodes_by_id[node.id] == null) return
+    if (this._nodes_by_id[node.id] == null) {
+      console.warn("LiteGraph: node not found", node)
+      return
+    }
     // cannot be removed
-    if (node.ignore_remove) return
+    if (node.ignore_remove) {
+      console.warn("LiteGraph: node cannot be removed", node)
+      return
+    }
 
     // sure? - almost sure is wrong
     this.beforeChange()
@@ -879,6 +889,8 @@ export class LGraph implements LinkNetwork, BaseLGraph, Serialisable<Serialisabl
       for (const canvas of list_of_graphcanvas) {
         if (canvas.selected_nodes[node.id])
           delete canvas.selected_nodes[node.id]
+
+        canvas.deselect(node)
       }
     }
 
@@ -1282,6 +1294,8 @@ export class LGraph implements LinkNetwork, BaseLGraph, Serialisable<Serialisabl
     const reroute = reroutes.get(id)
     if (!reroute) return
 
+    this.canvasAction(c => c.deselect(reroute))
+
     // Extract reroute from the reroute chain
     const { parentId, linkIds, floatingLinkIds } = reroute
     for (const reroute of reroutes.values()) {
@@ -1368,6 +1382,12 @@ export class LGraph implements LinkNetwork, BaseLGraph, Serialisable<Serialisabl
     }
   }
 
+  /** @returns The drag and scale state of the first attached canvas, otherwise `undefined`. */
+  #getDragAndScale(): DragAndScaleState | undefined {
+    const ds = this.list_of_graphcanvas?.at(0)?.ds
+    if (ds) return { scale: ds.scale, offset: ds.offset }
+  }
+
   /**
    * Prepares a shallow copy of this object for immediate serialisation or structuredCloning.
    * The return value should be discarded immediately.
@@ -1377,7 +1397,7 @@ export class LGraph implements LinkNetwork, BaseLGraph, Serialisable<Serialisabl
    * It is intended for use with {@link structuredClone} or {@link JSON.stringify}.
    */
   asSerialisable(options?: { sortNodes: boolean }): SerialisableGraph & Required<Pick<SerialisableGraph, "nodes" | "groups" | "extra">> {
-    const { id, revision, config, state, extra } = this
+    const { id, revision, config, state } = this
 
     const nodeList = !LiteGraph.use_uuids && options?.sortNodes
       // @ts-expect-error If LiteGraph.use_uuids is false, ids are numbers.
@@ -1390,6 +1410,11 @@ export class LGraph implements LinkNetwork, BaseLGraph, Serialisable<Serialisabl
     const links = this._links.size ? [...this._links.values()].map(x => x.asSerialisable()) : undefined
     const floatingLinks = this.floatingLinks.size ? [...this.floatingLinks.values()].map(x => x.asSerialisable()) : undefined
     const reroutes = this.reroutes.size ? [...this.reroutes.values()].map(x => x.asSerialisable()) : undefined
+
+    // Save scale and offset
+    const extra = { ...this.extra }
+    if (LiteGraph.saveViewportWithGraph) extra.ds = this.#getDragAndScale()
+    if (!extra.ds) delete extra.ds
 
     const data: ReturnType<typeof this.asSerialisable> = {
       id,
@@ -1458,11 +1483,12 @@ export class LGraph implements LinkNetwork, BaseLGraph, Serialisable<Serialisabl
 
       // State
       if (data.state) {
-        const { state: { lastGroupId, lastLinkId, lastNodeId, lastRerouteId } } = data
-        if (lastGroupId != null) this.state.lastGroupId = lastGroupId
-        if (lastLinkId != null) this.state.lastLinkId = lastLinkId
-        if (lastNodeId != null) this.state.lastNodeId = lastNodeId
-        if (lastRerouteId != null) this.state.lastRerouteId = lastRerouteId
+        const { lastGroupId, lastLinkId, lastNodeId, lastRerouteId } = data.state
+        const { state } = this
+        if (lastGroupId != null) state.lastGroupId = lastGroupId
+        if (lastLinkId != null) state.lastLinkId = lastLinkId
+        if (lastNodeId != null) state.lastNodeId = lastNodeId
+        if (lastRerouteId != null) state.lastRerouteId = lastRerouteId
       }
 
       // Links

@@ -1,4 +1,5 @@
 import type { ContextMenu } from "./ContextMenu"
+import type { LGraphCanvasEventMap } from "./infrastructure/LGraphCanvasEventMap"
 import type {
   CanvasColour,
   ColorOption,
@@ -23,12 +24,10 @@ import type {
   ReadOnlyPoint,
   ReadOnlyRect,
   Rect,
-  Rect32,
   Size,
 } from "./interfaces"
 import type { LGraph } from "./LGraph"
 import type {
-  CanvasEventDetail,
   CanvasMouseEvent,
   CanvasPointerEvent,
   CanvasPointerExtensions,
@@ -45,7 +44,7 @@ import { strokeShape } from "./draw"
 import { NullGraphError } from "./infrastructure/NullGraphError"
 import { LGraphGroup } from "./LGraphGroup"
 import { LGraphNode, type NodeId, type NodeProperty } from "./LGraphNode"
-import { LiteGraph } from "./litegraph"
+import { LiteGraph, type Rectangle } from "./litegraph"
 import { type LinkId, LLink } from "./LLink"
 import {
   containsRect,
@@ -163,6 +162,12 @@ export interface LGraphCanvasState {
   hoveringOver: CanvasItem
   /** If `true`, pointer move events will set the canvas cursor style. */
   shouldSetCursor: boolean
+
+  /**
+   * Dirty flag indicating that {@link selectedItems} has changed.
+   * Downstream consumers may reset to false once actioned.
+   */
+  selectionChanged: boolean
 }
 
 /**
@@ -258,6 +263,7 @@ export class LGraphCanvas {
     readOnly: false,
     hoveringOver: CanvasItem.Nothing,
     shouldSetCursor: true,
+    selectionChanged: false,
   }
 
   declare subgraph?: Subgraph
@@ -334,7 +340,6 @@ export class LGraphCanvas {
     this.state.draggingCanvas = value
     this.#updateCursorStyle()
   }
-  // #endregion Legacy accessors
 
   /**
    * @deprecated Use {@link LGraphNode.titleFontStyle} instead.
@@ -342,6 +347,7 @@ export class LGraphCanvas {
   get title_text_font(): string {
     return `${LiteGraph.NODE_TEXT_SIZE}px ${LiteGraph.NODE_FONT}`
   }
+  // #endregion Legacy accessors
 
   get inner_text_font(): string {
     return `normal ${LiteGraph.NODE_SUBTEXT_SIZE}px ${LiteGraph.NODE_FONT}`
@@ -471,7 +477,7 @@ export class LGraphCanvas {
   over_link_center?: LinkSegment
   last_mouse_position: Point
   /** The visible area of this canvas.  Tightly coupled with {@link ds}. */
-  visible_area: Rect32
+  visible_area: Rectangle
   /** Contains all links and reroutes that were rendered.  Repopulated every render cycle. */
   renderedPaths: Set<LinkSegment> = new Set()
   /** @deprecated Replaced by {@link renderedPaths}, but length is set to 0 by some extensions. */
@@ -1539,6 +1545,7 @@ export class LGraphCanvas {
     this.selected_nodes = {}
     this.selected_group = null
     this.selectedItems.clear()
+    this.state.selectionChanged = true
     this.onSelectionChange?.(this.selected_nodes)
 
     this.visible_nodes = []
@@ -3152,7 +3159,7 @@ export class LGraphCanvas {
     )
   }
 
-  emitEvent(detail: CanvasEventDetail): void {
+  emitEvent(detail: LGraphCanvasEventMap["litegraph:canvas"]): void {
     this.canvas.dispatchEvent(
       new CustomEvent("litegraph:canvas", {
         bubbles: true,
@@ -3444,6 +3451,7 @@ export class LGraphCanvas {
 
     item.selected = true
     this.selectedItems.add(item)
+    this.state.selectionChanged = true
     if (!(item instanceof LGraphNode)) return
 
     // Node-specific handling
@@ -3476,6 +3484,7 @@ export class LGraphCanvas {
 
     item.selected = false
     this.selectedItems.delete(item)
+    this.state.selectionChanged = true
     if (!(item instanceof LGraphNode)) return
 
     // Node-specific handling
@@ -3614,6 +3623,7 @@ export class LGraphCanvas {
       }
     }
 
+    this.state.selectionChanged = true
     this.onSelectionChange?.(this.selected_nodes)
   }
 
@@ -3651,6 +3661,8 @@ export class LGraphCanvas {
     this.selectedItems.clear()
     this.current_node = null
     this.highlighted_links = {}
+
+    this.state.selectionChanged = true
     this.onSelectionChange?.(this.selected_nodes)
     this.setDirty(true)
     graph.afterChange()
@@ -4552,7 +4564,7 @@ export class LGraphCanvas {
     // Draw node background (shape)
     ctx.beginPath()
     if (shape == RenderShape.BOX || low_quality) {
-      ctx.fillRect(area[0], area[1], area[2], area[3])
+      ctx.rect(area[0], area[1], area[2], area[3])
     } else if (shape == RenderShape.ROUND || shape == RenderShape.CARD) {
       ctx.roundRect(
         area[0],

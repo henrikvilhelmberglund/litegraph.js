@@ -1,13 +1,13 @@
-import type { Point, ReadOnlyRect, Rect, Rect32 } from "./interfaces"
+import type { Point, ReadOnlyRect, Rect } from "./interfaces"
 
-import { EaseFunction } from "./litegraph"
+import { EaseFunction, Rectangle } from "./litegraph"
 
 export interface DragAndScaleState {
   /**
    * The offset from the top-left of the current canvas viewport to `[0, 0]` in graph space.
    * Or said another way, the inverse offset of the viewport.
    */
-  offset: Point
+  offset: [number, number]
   /** The scale of the graph. */
   scale: number
 }
@@ -28,6 +28,10 @@ export class DragAndScale {
    * Implemented as a POCO that can be proxied without side-effects.
    */
   state: DragAndScaleState
+  lastState: DragAndScaleState = {
+    offset: [0, 0],
+    scale: 0,
+  }
 
   /** Maximum scale (zoom in) */
   max_scale: number
@@ -36,18 +40,20 @@ export class DragAndScale {
   enabled: boolean
   last_mouse: Point
   element: HTMLCanvasElement
-  visible_area: Rect32
+  visible_area: Rectangle
   dragging?: boolean
   viewport?: Rect
 
   onredraw?(das: DragAndScale): void
+  onChanged?(scale: number, offset: Point): void
 
-  get offset(): Point {
+  get offset(): [number, number] {
     return this.state.offset
   }
 
   set offset(value: Point) {
-    this.state.offset = value
+    this.state.offset[0] = value[0]
+    this.state.offset[1] = value[1]
   }
 
   get scale(): number {
@@ -60,39 +66,57 @@ export class DragAndScale {
 
   constructor(element: HTMLCanvasElement) {
     this.state = {
-      offset: new Float32Array([0, 0]),
+      offset: [0, 0],
       scale: 1,
     }
     this.max_scale = 10
     this.min_scale = 0.1
     this.enabled = true
     this.last_mouse = [0, 0]
-    this.visible_area = new Float32Array(4)
+    this.visible_area = new Rectangle()
 
     this.element = element
   }
 
+  /**
+   * Returns `true` if the current state has changed from the previous state.
+   * @returns `true` if the current state has changed from the previous state, otherwise `false`.
+   */
+  #stateHasChanged(): boolean {
+    const current = this.state
+    const previous = this.lastState
+
+    return current.scale !== previous.scale ||
+      current.offset[0] !== previous.offset[0] ||
+      current.offset[1] !== previous.offset[1]
+  }
+
   computeVisibleArea(viewport: Rect | undefined): void {
+    const { scale, offset, visible_area } = this
+
+    if (this.#stateHasChanged()) {
+      this.onChanged?.(scale, offset)
+      copyState(this.state, this.lastState)
+    }
+
     if (!this.element) {
-      this.visible_area[0] = this.visible_area[1] = this.visible_area[2] = this.visible_area[3] = 0
+      visible_area[0] = visible_area[1] = visible_area[2] = visible_area[3] = 0
       return
     }
-    let width = this.element.width
-    let height = this.element.height
-    let startx = -this.offset[0]
-    let starty = -this.offset[1]
+    let { width, height } = this.element
+    let startx = -offset[0]
+    let starty = -offset[1]
     if (viewport) {
-      startx += viewport[0] / this.scale
-      starty += viewport[1] / this.scale
+      startx += viewport[0] / scale
+      starty += viewport[1] / scale
       width = viewport[2]
       height = viewport[3]
     }
-    const endx = startx + width / this.scale
-    const endy = starty + height / this.scale
-    this.visible_area[0] = startx
-    this.visible_area[1] = starty
-    this.visible_area[2] = endx - startx
-    this.visible_area[3] = endy - starty
+    const endx = startx + width / scale
+    const endy = starty + height / scale
+    visible_area[0] = startx
+    visible_area[1] = starty
+    visible_area.resizeBottomRight(endx, endy)
   }
 
   toCanvasContext(ctx: CanvasRenderingContext2D): void {
@@ -128,9 +152,7 @@ export class DragAndScale {
     } else if (value > this.max_scale) {
       value = this.max_scale
     }
-
     if (value == this.scale) return
-    if (!this.element) return
 
     const rect = this.element.getBoundingClientRect()
     if (!rect) return
@@ -275,4 +297,15 @@ export class DragAndScale {
     this.offset[0] = 0
     this.offset[1] = 0
   }
+}
+
+/**
+ * Copies the values of one state into another, preserving references.
+ * @param from The state to copy values from.
+ * @param to The state to copy values into.
+ */
+function copyState(from: DragAndScaleState, to: DragAndScaleState): void {
+  to.scale = from.scale
+  to.offset[0] = from.offset[0]
+  to.offset[1] = from.offset[1]
 }

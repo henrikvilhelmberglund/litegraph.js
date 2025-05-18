@@ -208,9 +208,6 @@ type ArRect = [x: number, y: number, width: number, height: number]
 /** A rectangle starting at top-left coordinates `[x, y, width, height]` */
 export type Rect = ArRect | Float32Array | Float64Array
 
-/** A rectangle starting at top-left coordinates `[x, y, width, height]`.  Requires functions exclusive to `TypedArray`. */
-export type Rect32 = Float32Array
-
 /** A point represented as `[x, y]` co-ordinates that will not be modified */
 export type ReadOnlyPoint =
   | readonly [x: number, y: number]
@@ -420,3 +417,23 @@ export interface DefaultConnectionColors {
   getConnectedColor(type: ISlotType): CanvasColour
   getDisconnectedColor(type: ISlotType): CanvasColour
 }
+/**
+ * Shorthand for {@link Parameters} of optional callbacks.
+ * @example
+ * ```ts
+ * const { onClick } = CustomClass.prototype
+ * CustomClass.prototype.onClick = function (...args: CallbackParams<typeof onClick>) {
+ *   const r = onClick?.apply(this, args)
+ *   // ...
+ *   return r
+ * }
+ * ```
+ */
+export type CallbackParams<T extends ((...args: any) => any) | undefined> =
+  Parameters<Exclude<T, undefined>>
+
+/**
+ * Shorthand for {@link ReturnType} of optional callbacks.
+ * @see {@link CallbackParams}
+ */
+export type CallbackReturn<T extends ((...args: any) => any) | undefined> = ReturnType<Exclude<T, undefined>>
