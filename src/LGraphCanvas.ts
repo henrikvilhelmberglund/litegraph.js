@@ -6469,22 +6469,18 @@ export class LGraphCanvas {
     options = options || {}
 
     const info = node.getPropertyInfo(property)
-    console.log("property info", info)
     const { type } = info
 
     let input_html = ""
 
     if (
       type == "string" ||
+      type == "number" ||
       type == "array" ||
       type == "object"
     ) {
       input_html = "<input autofocus type='text' class='value'/>"
-    }
-      else if (type == "number") {
-      input_html = "<input autofocus type='number' class='value'/>"
-    }
-      else if ((type == "enum" || type == "combo") && info.values) {
+    } else if ((type == "enum" || type == "combo") && info.values) {
       input_html = "<select autofocus type='text' class='value'>"
       for (const i in info.values) {
         const v = Array.isArray(info.values) ? info.values[i] : i
