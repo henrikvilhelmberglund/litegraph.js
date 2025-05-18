@@ -5859,6 +5859,7 @@ export class LGraphCanvas {
 
     const input = value_element
     input.addEventListener("keydown", function (e: KeyboardEvent) {
+      console.log(e);
       dialog.is_modified = true
       if (e.key == "Escape") {
         // ESC
@@ -5871,7 +5872,16 @@ export class LGraphCanvas {
           callback(this.value)
         }
         dialog.close()
-      } else {
+      }
+      else if (e.shiftKey && e.code === "ArrowUp" && e.target instanceof HTMLInputElement && e.target.type === "number") { 
+        e.preventDefault();
+        e.target.stepUp(10);
+      }
+      else if (e.shiftKey && e.code === "ArrowDown" && e.target instanceof HTMLInputElement && e.target.type === "number") {
+        e.preventDefault();
+        e.target.stepDown(10);
+      }
+      else {
         return
       }
       e.preventDefault()
