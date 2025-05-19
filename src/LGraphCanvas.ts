@@ -5804,8 +5804,9 @@ export class LGraphCanvas {
       className: "graphdialog rounded",
       innerHTML: multiline
         ? "<span class='name'></span> <textarea autofocus class='value'></textarea><button class='rounded'>OK</button>"
-        : stepValue ? `<span class='name'></span> <input autofocus type='number' step=${stepValue} class='value'/><button class='rounded'>OK</button>`
-                    : "<span class='name'></span> <input autofocus type='text' class='value'/><button class='rounded'>OK</button>",
+        : (stepValue
+          ? `<span class='name'></span> <input autofocus type='number' step=${stepValue} class='value'/><button class='rounded'>OK</button>`
+          : "<span class='name'></span> <input autofocus type='text' class='value'/><button class='rounded'>OK</button>"),
       close() {
         that.prompt_box = null
         if (dialog.parentNode) {
@@ -5883,16 +5884,13 @@ export class LGraphCanvas {
           callback(this.value)
         }
         dialog.close()
-      }
-      else if (e.shiftKey && e.code === "ArrowUp" && e.target instanceof HTMLInputElement && e.target.type === "number") { 
-        e.preventDefault();
-        e.target.stepUp(10);
-      }
-      else if (e.shiftKey && e.code === "ArrowDown" && e.target instanceof HTMLInputElement && e.target.type === "number") {
-        e.preventDefault();
-        e.target.stepDown(10);
-      }
-      else {
+      } else if (e.shiftKey && e.code === "ArrowUp" && e.target instanceof HTMLInputElement && e.target.type === "number") {
+        e.preventDefault()
+        e.target.stepUp(10)
+      } else if (e.shiftKey && e.code === "ArrowDown" && e.target instanceof HTMLInputElement && e.target.type === "number") {
+        e.preventDefault()
+        e.target.stepDown(10)
+      } else {
         return
       }
       e.preventDefault()
