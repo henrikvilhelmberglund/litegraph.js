@@ -43,8 +43,9 @@ export class TextWidget extends BaseWidget<IStringWidget> implements IStringWidg
         }
       },
       e,
-      this.options?.multiline ?? false,
-      0,
+      {
+        multiline: this.options?.multiline ?? false,
+      },
     )
   }
 }

@@ -32,6 +32,7 @@ import type {
   CanvasPointerEvent,
   CanvasPointerExtensions,
 } from "./types/events"
+import type { PromptOptionalParams } from "./types/optionalParams"
 import type { ClipboardItems } from "./types/serialisation"
 import type { IBaseWidget } from "./types/widgets"
 
@@ -5793,8 +5794,7 @@ export class LGraphCanvas {
     value: any,
     callback: (arg0: any) => void,
     event: CanvasMouseEvent,
-    multiline?: boolean,
-    stepValue?: number,
+    optionalParams?: PromptOptionalParams,
   ): HTMLDivElement {
     const that = this
     title = title || ""
@@ -5802,10 +5802,10 @@ export class LGraphCanvas {
     const customProperties = {
       is_modified: false,
       className: "graphdialog rounded",
-      innerHTML: multiline
+      innerHTML: optionalParams && optionalParams.multiline
         ? "<span class='name'></span> <textarea autofocus class='value'></textarea><button class='rounded'>OK</button>"
-        : (stepValue
-          ? `<span class='name'></span> <input autofocus type='number' step=${stepValue} class='value'/><button class='rounded'>OK</button>`
+        : (optionalParams && optionalParams.stepValue
+          ? `<span class='name'></span> <input autofocus type='number' step=${optionalParams && optionalParams.stepValue} class='value'/><button class='rounded'>OK</button>`
           : "<span class='name'></span> <input autofocus type='text' class='value'/><button class='rounded'>OK</button>"),
       close() {
         that.prompt_box = null

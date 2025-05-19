@@ -76,7 +76,7 @@ export class NumberWidget extends BaseSteppedWidget<INumericWidget> implements I
       if (!isNaN(newValue)) {
         this.setValue(newValue, { e, node, canvas })
       }
-    }, e, false, step)
+    }, e, { stepValue: step })
   }
 
   /**
